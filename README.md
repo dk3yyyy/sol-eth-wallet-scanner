@@ -1,6 +1,6 @@
 # 🚀 DK3Y Wallet Scanner Bot
 
-A professional Telegram bot for analyzing Solana and Ethereum wallets with real-time market data, portfolio analytics, and admin user tracking.
+A professional, feature-rich Telegram bot for analyzing Solana and Ethereum wallet addresses. Get comprehensive portfolio insights with real-time market data, interactive navigation, and professional UI design.
 
 ## ✨ Features
 
