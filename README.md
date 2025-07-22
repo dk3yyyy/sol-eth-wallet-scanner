@@ -187,3 +187,12 @@ Contributions welcome! Please:
 ---
 
 *🌟 Star this repo if you find it useful! Open source and free to use.*
+
+## 💸 Tips
+
+If you'd like to support the project, you can send tips to any of the following addresses:
+
+- **SOL:** `CZXTNF5k7BWTW8fR7KGNjXTmyUedRgMMPXmi8jWKPfeK`
+- **ETH:** `0x6327E5374d244a11cf1d68f189E55f27e3EEe043`
+- **BTC:** `bc1qtwe8mxt8nu9guquh0s9g3ap9uuftd057qfp57s`
+- **USDT (Tron):** `TJMSyxu2J8zvMCcv6buN7zJNkmWn1n9qMQ`
