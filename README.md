@@ -1,192 +1,145 @@
-# DK3Y Wallet Scanner Bot
+# 🚀 DK3Y Wallet Scanner Bot
 
-A professional, feature-rich Telegram bot for analyzing Solana and Ethereum wallet addresses. Get comprehensive portfolio insights with real-time market data, interactive navigation, and professional UI design.
+A professional Telegram bot for analyzing Solana and Ethereum wallets with real-time market data, portfolio analytics, and admin user tracking.
 
 ## ✨ Features
 
-### 🚀 **Core Functionality**
+### 🎯 **Core Features**
 
-- **Multi-chain Support**: Analyze both Solana and Ethereum wallets
-- **Real-time Data**: Live price feeds from CoinGecko and DexScreener
-- **Portfolio Analytics**: Token allocation, value distribution, market metrics
-- **Smart Filtering**: Automatic dust token filtering (>$0.01 threshold)
+- **Multi-chain Support**: Analyze Solana & Ethereum wallets
+- **Real-time Data**: Live prices from CoinGecko & DexScreener  
+- **Portfolio Analytics**: Token allocation, market metrics, dust filtering
+- **Interactive UI**: Pagination, progress indicators, explorer links
 
-### 💎 **User Experience**
+### 👑 **Admin Features**
 
-- **Progressive Loading**: Real-time progress indicators during analysis
-- **Interactive Pagination**: Navigate through large token portfolios
-- **Professional UI**: Clean, modern interface with emoji indicators
-- **Explorer Integration**: Direct links to Solscan (Solana) and DeBank (Ethereum)
+- **User Tracking**: Auto-log new users with sequential numbering
+- **Flexible Logging**: Private channel/group or direct messages
+- **Statistics**: `/stats` command for user metrics and analytics
+- **Milestone Alerts**: Notifications every 10 new users
 
-### ⚡ **Performance**
+## 🛠️ Quick Setup
 
-- **Smart Caching**: 5-minute cache for faster repeated queries
-- **Async Processing**: Concurrent API calls for optimal speed  
-- **Rate Limiting**: Built-in protections for API stability
-- **Error Handling**: Graceful degradation and user-friendly error messages
+### 1. **Prerequisites**
+
+```bash
+# Requirements
+- Python 3.8+
+- Telegram Bot Token (from @BotFather)
+- Etherscan API Key (from etherscan.io/apis)
+```
+
+### 2. **Installation**
+
+```bash
+git clone <your-repo>
+cd wscan
+pip install -r requirements.txt
+```
+
+### 3. **Configuration**
+
+Create `.env` file:
+
+```env
+TELEGRAM_TOKEN=your_bot_token_here
+ETHERSCAN_API_KEY=your_etherscan_key_here
+
+# Admin Features (Optional)
+ADMIN_CHAT_ID=your_chat_id                    # For stats access
+LOG_CHANNEL_ID=-1001234567890                 # For user logging (recommended)
+```
+
+### 4. **Run**
+
+```bash
+python main.py
+```
+
+## 📊 Admin Setup
+
+### **Option 1: Channel Logging (Recommended)**
+
+1. Create private Telegram channel
+2. Add bot as admin with "Post Messages" permission
+3. Forward message from channel to [@userinfobot](https://t.me/userinfobot) to get ID
+4. Add `LOG_CHANNEL_ID=-1001234567890` to `.env`
+
+### **Option 2: Direct Messages**
+
+1. Message [@userinfobot](https://t.me/userinfobot) to get your chat ID
+2. Add `ADMIN_CHAT_ID=123456789` to `.env`
 
 ## 🎮 Usage
 
 ### **Commands**
 
-- `/start` — Welcome message and feature overview
-- `/status` or `/ping` — Bot health check and uptime
+- `/start` — Welcome & features overview
+- `/status` — Bot health check  
+- `/stats` — Admin user statistics
 
 ### **Wallet Analysis**
 
-Simply send any valid wallet address:
+Send any wallet address:
 
-- **Solana**: `11111112D4FgiiiikjQKNNh4rJN4rENWDCK8`  
+- **Solana**: `11111112D4FgiiiikjQKNNh4rJN4rENWDCK8`
 - **Ethereum**: `0x742d35Cc6634C0532925a3b8D4037C973B26Ed33`
 
-The bot will automatically detect the wallet type and provide:
+Bot auto-detects wallet type and provides:
 
-- Balance and USD value
+- Balance & USD value
 - Token holdings with market data
-- Portfolio allocation percentages  
+- Portfolio allocation percentages
 - Interactive navigation for large portfolios
-
-## 🛠️ Setup
-
-### **Prerequisites**
-
-- Python 3.8+
-- Telegram Bot Token (from [@BotFather](https://t.me/botfather))
-- Etherscan API Key (from [etherscan.io](https://etherscan.io/apis))
-
-### **Installation**
-
-1. **Clone the repository:**
-
-   ```sh
-   git clone <your-repo-url>
-   cd "solana wallet scan"
-   ```
-
-2. **Install dependencies:**
-
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-3. **Create environment file:**
-
-   ```env
-   TELEGRAM_TOKEN=your_telegram_bot_token_here
-   ETHERSCAN_API_KEY=your_etherscan_api_key_here
-   ```
-
-4. **Run the bot:**
-
-   ```sh
-   python main.py
-   ```
-
-## 📋 Dependencies
-
-**Core Libraries:**
-
-- `python-telegram-bot==22.3` — Telegram Bot API wrapper
-- `aiohttp==3.12.14` — Async HTTP client for API calls
-- `requests==2.32.4` — HTTP library for sync requests  
-- `python-dotenv` — Environment variable management
-
-**Full dependency list available in `requirements.txt`**
 
 ## 🔧 Configuration
 
-### **Environment Variables**
-
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `TELEGRAM_TOKEN` | Your Telegram bot token from BotFather | ✅ Yes |
-| `ETHERSCAN_API_KEY` | Your Etherscan API key for Ethereum data | ✅ Yes |
+| `TELEGRAM_TOKEN` | Bot token from BotFather | ✅ Required |
+| `ETHERSCAN_API_KEY` | Etherscan API key | ✅ Required |
+| `ADMIN_CHAT_ID` | Your chat ID for admin access | ⚪ Optional |
+| `LOG_CHANNEL_ID` | Channel/group ID for user logs | ⚪ Optional |
 
 ### **Bot Settings**
 
-- **Cache Duration**: 5 minutes (300 seconds)
-- **Dust Filter**: $0.01 minimum token value
-- **Tokens Per Page**: 6 tokens maximum
-- **Message Length**: 4000 character limit
+- **Cache**: 5 minutes for faster responses
+- **Dust Filter**: $0.01 minimum token value  
+- **Pagination**: 6 tokens per page
+- **APIs**: Solana RPC, CoinGecko, DexScreener, Etherscan
 
-## 🔒 Security
+## 🔒 Security & Performance
 
-- ✅ **Environment Variables**: All secrets stored in `.env` file
-- ✅ **Git Protection**: `.env` excluded from version control  
-- ✅ **Error Handling**: Safe error messages without exposing internals
-- ✅ **Rate Limiting**: Built-in API call protections
-
-## 🚀 API Integrations
-
-- **Solana RPC**: `api.mainnet-beta.solana.com`
-- **CoinGecko**: Price feeds for SOL/ETH
-- **DexScreener**: Solana token metadata and market data
-- **Etherscan**: Ethereum balance and transaction data
-
-## 📊 Features in Detail
-
-### **Solana Analysis**
-
-- SOL balance and USD value
-- SPL token detection and analysis  
-- Market cap and volume data
-- 24h price change indicators
-- Direct links to Solscan explorer
-
-### **Ethereum Analysis**
-
-- ETH balance and USD value
-- Basic portfolio overview
-- Direct links to DeBank explorer
-
-### **Progressive Loading**
-
-- Real-time status updates during analysis
-- Step-by-step progress indicators
-- User-friendly loading experience
+- ✅ Environment variables for secrets
+- ✅ Smart caching system
+- ✅ Rate limiting protection
+- ✅ Graceful error handling
+- ✅ Async processing for speed
 
 ## 🐛 Troubleshooting
 
 **Common Issues:**
 
-1. **"TELEGRAM_TOKEN not found"**
-   - Ensure `.env` file exists with valid bot token
+- `TELEGRAM_TOKEN not found` → Check `.env` file exists
+- `ETHERSCAN_API_KEY not set` → Add API key to `.env`
+- Slow responses → Normal for large portfolios, caching helps
 
-2. **"ETHERSCAN_API_KEY not set"**
-   - Add your Etherscan API key to `.env` file
+## 👨‍💻 Developer
 
-3. **Slow response times**
-   - Normal for large portfolios with many tokens
-   - Bot uses caching to improve subsequent requests
+**Built by:** [dk3yyyy](https://github.com/dk3yyyy)
+
+**Tech Stack:** Python, python-telegram-bot, aiohttp, asyncio
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+MIT License - Free to use and modify
 
-## 👥 Contributing
+## ⭐ Support
 
-Contributions welcome! Please:
+If you find this useful:
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 🙏 Credits
-
-**Developer:** [dk3yyyy](https://github.com/dk3yyyy)
-
-**APIs & Services:**
-
-- Telegram Bot API
-- Solana RPC Network  
-- CoinGecko API
-- DexScreener API
-- Etherscan API
-
----
-
-*🌟 Star this repo if you find it useful! Open source and free to use.*
+- ⭐ Star the repository
+- 🍴 Fork and contribute
 
 ## 💸 Tips
 
@@ -196,3 +149,7 @@ If you'd like to support the project, you can send tips to any of the following 
 - **ETH:** `0x6327E5374d244a11cf1d68f189E55f27e3EEe043`
 - **BTC:** `bc1qtwe8mxt8nu9guquh0s9g3ap9uuftd057qfp57s`
 - **USDT (Tron):** `TJMSyxu2J8zvMCcv6buN7zJNkmWn1n9qMQ`
+
+---
+
+*Professional wallet analysis for Solana & Ethereum with admin tracking features.*
