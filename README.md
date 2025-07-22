@@ -141,7 +141,7 @@ If you find this useful:
 - ⭐ Star the repository
 - 🍴 Fork and contribute
 
-## 💸 Tips
+## ☕️ Buy Me Coffee 
 
 If you'd like to support the project, you can send tips to any of the following addresses:
 
