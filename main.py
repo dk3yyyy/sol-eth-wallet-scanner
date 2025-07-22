@@ -71,8 +71,13 @@ load_dotenv()
 def escape_markdown(text: str) -> str:
     if not isinstance(text, str):
         text = str(text)
-    # Only need to escape these characters in regular Markdown
     escape_chars = r'_*[`'
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
+
+def escape_markdown_v2(text: str) -> str:
+    if not isinstance(text, str):
+        text = str(text)
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
     return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
 logging.basicConfig(level=logging.INFO)
@@ -98,6 +103,22 @@ ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 if not ETHERSCAN_API_KEY:
     raise RuntimeError("ETHERSCAN_API_KEY is not set in the .env file!")
 
+# Admin configuration
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+LOG_CHANNEL_ID = os.getenv("LOG_CHANNEL_ID")  # Optional: for user logs
+
+if ADMIN_CHAT_ID:
+    ADMIN_CHAT_ID = int(ADMIN_CHAT_ID)
+if LOG_CHANNEL_ID:
+    LOG_CHANNEL_ID = int(LOG_CHANNEL_ID)
+
+if not ADMIN_CHAT_ID and not LOG_CHANNEL_ID:
+    print("⚠️  Warning: Neither ADMIN_CHAT_ID nor LOG_CHANNEL_ID set in .env file. Admin notifications disabled.")
+elif LOG_CHANNEL_ID:
+    print("✅ User logging will be sent to private channel/group.")
+elif ADMIN_CHAT_ID:
+    print("✅ User logging will be sent to admin direct message.")
+
 # Enhanced Constants
 MAX_MESSAGE_LENGTH = 4000
 TOKENS_PER_PAGE = 6  # Reduced for cleaner display
@@ -106,6 +127,105 @@ MIN_TOKEN_VALUE_USD = 0.01  # Filter out dust tokens
 
 # Cache system
 cache = {}
+
+# User tracking system
+user_data_file = "user_data.json"
+user_count = 0
+
+def load_user_data():
+    global user_count
+    try:
+        if os.path.exists(user_data_file):
+            with open(user_data_file, 'r') as f:
+                data = json.load(f)
+                user_count = data.get('user_count', 0)
+                return data.get('users', {})
+        return {}
+    except Exception as e:
+        logger.error(f"Error loading user data: {e}")
+        return {}
+
+def save_user_data(users_dict):
+    try:
+        data = {
+            'user_count': user_count,
+            'users': users_dict
+        }
+        with open(user_data_file, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving user data: {e}")
+
+# Load existing user data on startup
+known_users = load_user_data()
+
+async def notify_admin_new_user(application, user_id: int, username: Optional[str], first_name: Optional[str], last_name: Optional[str]):
+    target_chat_id = LOG_CHANNEL_ID if LOG_CHANNEL_ID else ADMIN_CHAT_ID
+    
+    if not target_chat_id:
+        return
+    
+    try:
+        global user_count, known_users
+        user_count += 1
+        
+        known_users[str(user_id)] = {
+            'user_number': user_count,
+            'username': username,
+            'first_name': first_name,
+            'last_name': last_name,
+            'join_date': datetime.now().isoformat()
+        }
+        
+        save_user_data(known_users)
+        
+        username_display = f"@{username}" if username else "No username"
+        full_name = f"{first_name or ''} {last_name or ''}".strip()
+        if not full_name:
+            full_name = "No name"
+        
+        if LOG_CHANNEL_ID:
+            separator = "━━━━━━━━━━━━━━━━━━━━━━"
+            admin_msg = (
+                f"🆕 **New User \\#{user_count}**\n"
+                f"{escape_markdown_v2(separator)}\n"
+                f"👤 **Name:** {escape_markdown_v2(full_name)}\n"
+                f"🆔 **Username:** {escape_markdown_v2(username_display)}\n"
+                f"🔢 **User ID:** `{user_id}`\n"
+                f"📅 **Joined:** {escape_markdown_v2(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}\n"
+                f"📊 **Total Users:** `{user_count}`"
+            )
+        else:
+            admin_msg = (
+                f"🆕 *New User\\!* \\[{user_count}\\]\n"
+                f"👤 *Name:* {escape_markdown_v2(full_name)}\n"
+                f"🆔 *Username:* {escape_markdown_v2(username_display)}\n"
+                f"🔢 *User ID:* `{user_id}`\n"
+                f"📅 *Joined:* {escape_markdown_v2(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}"
+            )
+        
+        await application.bot.send_message(
+            chat_id=target_chat_id,
+            text=admin_msg,
+            parse_mode="MarkdownV2"
+        )
+        
+        if LOG_CHANNEL_ID and ADMIN_CHAT_ID and user_count % 10 == 0:
+            milestone_msg = f"🎉 *Milestone Alert\\!*\n\nBot has reached **{user_count} total users**\\!"
+            try:
+                await application.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=milestone_msg,
+                    parse_mode="MarkdownV2"
+                )
+            except Exception:
+                pass
+        
+    except Exception as e:
+        logger.error(f"Error notifying admin about new user: {e}")
+
+def is_new_user(user_id: int) -> bool:
+    return str(user_id) not in known_users
 
 def get_cache_key(prefix: str, data: str) -> str:
     return f"{prefix}_{hashlib.md5(data.encode()).hexdigest()[:8]}"
@@ -129,18 +249,15 @@ def set_cache(key: str, data: Any) -> None:
 def validate_wallet_address(address: str) -> Tuple[bool, str]:
     address = address.strip()
     
-    # Ethereum address validation
     if address.startswith('0x'):
         if len(address) == 42 and re.match(r'^0x[a-fA-F0-9]{40}$', address):
             return True, 'ethereum'
         else:
             return False, 'invalid_ethereum'
     
-    # Solana address validation (base58, 32-44 chars typically)
     elif re.match(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$', address):
         return True, 'solana'
     else:
-        # Explicitly distinguish invalid Solana
         return False, 'invalid_solana'
 
 async def get_sol_balance(wallet_address: str) -> float:
@@ -709,9 +826,82 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             parse_mode="Markdown"
         )
 
+async def admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin command to view user statistics"""
+    if update.effective_message and update.effective_user:
+        # Check if user is admin
+        if not ADMIN_CHAT_ID or update.effective_user.id != ADMIN_CHAT_ID:
+            await update.effective_message.reply_text("❌ *Access Denied*", parse_mode="Markdown")
+            return
+        
+        try:
+            # Get recent users (last 10)
+            recent_users = []
+            sorted_users = sorted(
+                known_users.items(), 
+                key=lambda x: x[1].get('user_number', 0), 
+                reverse=True
+            )
+            
+            for user_id, user_info in sorted_users[:10]:
+                username = user_info.get('username')
+                full_name = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip()
+                user_num = user_info.get('user_number', 0)
+                join_date = user_info.get('join_date', '')
+                
+                if join_date:
+                    try:
+                        join_dt = datetime.fromisoformat(join_date)
+                        join_str = join_dt.strftime('%m-%d %H:%M')
+                    except:
+                        join_str = "Unknown"
+                else:
+                    join_str = "Unknown"
+                
+                username_display = f"@{username}" if username else "No username"
+                name_display = full_name if full_name else "No name"
+                
+                recent_users.append(f"#{user_num} {escape_markdown(name_display)} ({escape_markdown(username_display)}) - {escape_markdown(join_str)}")
+            
+            # Check logging configuration
+            log_destination = "Private Channel/Group" if LOG_CHANNEL_ID else "Direct Messages" if ADMIN_CHAT_ID else "Disabled"
+            
+            stats_msg = (
+                f"📊 *Bot Statistics*\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                f"👥 *Total Users:* `{user_count}`\n"
+                f"📍 *Logging to:* `{escape_markdown(log_destination)}`\n"
+                f"📅 *Last Updated:* `{escape_markdown(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}`\n\n"
+                f"🆕 *Recent Users (Last 10):*\n"
+                f"{chr(10).join(recent_users) if recent_users else 'No users yet'}"
+            )
+            
+            await update.effective_message.reply_text(
+                stats_msg,
+                parse_mode="Markdown"
+            )
+        
+        except Exception as e:
+            await update.effective_message.reply_text(
+                f"❌ *Error fetching stats:* `{escape_markdown(str(e))}`",
+                parse_mode="Markdown"
+            )
+
 # Enhanced start command
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if update.effective_message:
+    if update.effective_message and update.effective_user:
+        user = update.effective_user
+        
+        # Check if this is a new user and notify admin
+        if is_new_user(user.id):
+            await notify_admin_new_user(
+                context.application,
+                user.id,
+                user.username,
+                user.first_name,
+                user.last_name
+            )
+        
         welcome_msg = (
             "🚀 *DK3Y Wallet Scanner*\n"
             "━━━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -796,9 +986,11 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("status", status))
     application.add_handler(CommandHandler("ping", status))
+    application.add_handler(CommandHandler("stats", admin_stats))
     application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_wallet_address))
     application.run_polling()
 
 if __name__ == "__main__":
     main()
+
